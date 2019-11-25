@@ -12,26 +12,34 @@ namespace DSM.Controller.AppServices
     {
         public static IEnumerable<SiteEndpoint> GetRawEndpoints(this ISite site)
         {
-            ISiteWebConfiguration webconfig = site.GetConfiguration();
-            if (webconfig == null)
+            try
             {
+                ISiteWebConfiguration webconfig = site.GetConfiguration();
+                if (webconfig == null)
+                {
+                    return null;
+                }
+
+                IEnumerable<KeyValuePair<string, string>> rawEndpoints = webconfig.ContentRaw.GetRawEndpoints(site.Name);
+                IEnumerable<SiteEndpoint> endpoints = rawEndpoints?.Select(ep => new SiteEndpoint
+                {
+                    SiteId = site.Id,
+                    Site = (Site)site,
+                    EndpointName = ep.Key,
+                    EndpointUrl = ep.Value,
+                    Port = ep.Value.GetPort(),
+                    IsAvailable = true,
+                    LastCheckDate = DateTime.Now,
+                    DeleteStatus = false,
+                    SendAlertMailWhenUnavailable = true
+                });
+                return endpoints;
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Exception(ex);
                 return null;
             }
-
-            IEnumerable<KeyValuePair<string, string>> rawEndpoints = webconfig.ContentRaw.GetRawEndpoints(site.Name);
-            IEnumerable<SiteEndpoint> endpoints = rawEndpoints?.Select(ep => new SiteEndpoint
-            {
-                SiteId = site.Id,
-                Site = (Site)site,
-                EndpointName = ep.Key,
-                EndpointUrl = ep.Value,
-                Port = ep.Value.GetPort(),
-                IsAvailable = true,
-                LastCheckDate = DateTime.Now,
-                DeleteStatus = false,
-                SendAlertMailWhenUnavailable = true
-            });
-            return endpoints;
         }
         /// <summary>
         /// Get port number from endpoint
@@ -40,19 +48,27 @@ namespace DSM.Controller.AppServices
         /// <returns></returns>
         private static int GetPort(this string rawEndpoint)
         {
-            char splitter = ':';
-            char endOfUrl = '/';
-            int endpointPort = 80;
-
-            string excludedString = rawEndpoint.ExcludeHttpTags();
-            if (excludedString.Contains(splitter))
+            try
             {
-                string portSplitVal = excludedString.Split(splitter).Last();
-                int portSplitIndex = portSplitVal.IndexOf(endOfUrl);
-                string port = portSplitVal.Substring(0, portSplitIndex);
-                int.TryParse(port, out endpointPort);
+                char splitter = ':';
+                char endOfUrl = '/';
+                int endpointPort = 80;
+
+                string excludedString = rawEndpoint.ExcludeHttpTags();
+                if (excludedString.Contains(splitter))
+                {
+                    string portSplitVal = excludedString.Split(splitter).Last();
+                    int portSplitIndex = portSplitVal.IndexOf(endOfUrl);
+                    string port = portSplitVal.Substring(0, portSplitIndex);
+                    int.TryParse(port, out endpointPort);
+                }
+                return endpointPort;
             }
-            return endpointPort;
+            catch (Exception ex)
+            {
+                ExceptionHandler.Exception(ex);
+                return 80;
+            }
         }
         /// <summary>
         /// Get Raw endpoints from site
@@ -94,6 +110,8 @@ namespace DSM.Controller.AppServices
             }
             catch (XmlException ex)
             {
+                ExceptionHandler.XmlException(ex);
+
                 XConsole.WriteLine(ex.ToString());
                 XConsole.WriteLine(siteName, Core.Ops.ConsoleTheming.ConsoleColorSetGreen.Instance);
                 XConsole.WriteLine(xmlContent.Length.ToString(), Core.Ops.ConsoleTheming.ConsoleColorSetGreen.Instance);

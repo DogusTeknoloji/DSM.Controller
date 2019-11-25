@@ -19,53 +19,69 @@ namespace DSM.Controller.AppServices
         /// <returns></returns>
         public static IEnumerable<SiteConnectionString> GetRawConnectionStrings(this ISite site)
         {
-            ISiteWebConfiguration webconfig = site.GetConfiguration();
-            if (webconfig == null)
+            try
             {
+                ISiteWebConfiguration webconfig = site.GetConfiguration();
+                if (webconfig == null)
+                {
+                    return null;
+                }
+
+                IEnumerable<KeyValuePair<string, string>> rawConnectionstrings = webconfig.ContentRaw.GetRawConnectionStrings();
+                IEnumerable<SiteConnectionString> connectionStrings = rawConnectionstrings?.Select(cs => GetConnectionString(cs.Value, cs.Key, site.Id));
+
+                return connectionStrings;
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Exception(ex);
                 return null;
             }
-
-            IEnumerable<KeyValuePair<string, string>> rawConnectionstrings = webconfig.ContentRaw.GetRawConnectionStrings();
-            IEnumerable<SiteConnectionString> connectionStrings = rawConnectionstrings?.Select(cs => GetConnectionString(cs.Value, cs.Key, site.Id));
-
-            return connectionStrings;
         }
         /// <summary>
         /// Get Raw Connectionstrings from site
         /// </summary>
         /// <param name="contentRaw"></param>
         /// <returns></returns>
-        private static  IEnumerable<KeyValuePair<string, string>> GetRawConnectionStrings(this string contentRaw)
+        private static IEnumerable<KeyValuePair<string, string>> GetRawConnectionStrings(this string contentRaw)
         {
-            List<KeyValuePair<string, string>> outputs = new List<KeyValuePair<string, string>>();
-            XmlDocument document = new XmlDocument();
-            document.LoadXml(contentRaw);
-            XmlNodeList nodes = document.SelectNodes("//connectionStrings/add");
-            foreach (XmlNode xmlNode in nodes)
+            try
             {
-                string addr = xmlNode.Attributes["connectionString"].InnerText;
-                string name = xmlNode.Attributes["name"].InnerText;
-                outputs.Add(new KeyValuePair<string, string>(name, addr));
-            }
-
-            document.LoadXml(contentRaw);
-            nodes = document.SelectNodes("appSettings/add");
-            if (nodes.Count < 1)
-            {
-                return outputs;
-            }
-
-            foreach (XmlNode xmlNode1 in nodes)
-            {
-                string addr = xmlNode1.Attributes["value"].InnerText;
-                if (addr.Contains("Data Source"))
+                List<KeyValuePair<string, string>> outputs = new List<KeyValuePair<string, string>>();
+                XmlDocument document = new XmlDocument();
+                document.LoadXml(contentRaw);
+                XmlNodeList nodes = document.SelectNodes("//connectionStrings/add");
+                foreach (XmlNode xmlNode in nodes)
                 {
-                    string name = xmlNode1.Attributes["key"].InnerText;
+                    string addr = xmlNode.Attributes["connectionString"].InnerText;
+                    string name = xmlNode.Attributes["name"].InnerText;
                     outputs.Add(new KeyValuePair<string, string>(name, addr));
                 }
-            }
 
-            return outputs;
+                document.LoadXml(contentRaw);
+                nodes = document.SelectNodes("appSettings/add");
+                if (nodes.Count < 1)
+                {
+                    return outputs;
+                }
+
+                foreach (XmlNode xmlNode1 in nodes)
+                {
+                    string addr = xmlNode1.Attributes["value"].InnerText;
+                    if (addr.Contains("Data Source"))
+                    {
+                        string name = xmlNode1.Attributes["key"].InnerText;
+                        outputs.Add(new KeyValuePair<string, string>(name, addr));
+                    }
+                }
+
+                return outputs;
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Exception(ex);
+                return null;
+            }
         }
         /// <summary>
         /// Gathers Connectionstring object from raw text -> connection string 
@@ -74,18 +90,26 @@ namespace DSM.Controller.AppServices
         /// <param name="connectionName">Name of the Connection</param>
         /// <param name="siteId">Foreign Key of between Site and Connectionstring object</param>
         /// <returns></returns>
-        private static  SiteConnectionString GetConnectionString(string connectionString, string connectionName, long siteId)
+        private static SiteConnectionString GetConnectionString(string connectionString, string connectionName, long siteId)
         {
-            try
+
+            if (connectionString.Contains(("metadata=res://")))
             {
-                if (connectionString.Contains(("metadata=res://")))
+                try
                 {
                     XConsole.WriteLine("EF BASED CONNECTION STRING DETECTED");
                     EFConnectionStringBuilder entityConnectionString = new EFConnectionStringBuilder(connectionString);
                     connectionString = entityConnectionString.ProviderConnectionString;
                     XConsole.WriteLine(connectionString);
                 }
+                catch (Exception ex)
+                {
+                    ExceptionHandler.Exception(ex);
+                }
+            }
 
+            try
+            {
                 SqlConnectionStringBuilder sqlConnectionString = new SqlConnectionStringBuilder(connectionString);
                 string serverName = string.Empty;
                 int portInfo = 1433;
@@ -114,8 +138,9 @@ namespace DSM.Controller.AppServices
                     ConnectionName = connectionName
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                ExceptionHandler.Exception(ex);
                 return null;
             }
         }

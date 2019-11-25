@@ -56,7 +56,7 @@ namespace DSM.Controller.AppServices.IIS
                          DateDeleted = new DateTime(1900, 01, 01),
                          WebConfigLastBackupDate = new DateTime(1900, 01, 01),
                          AppType = app.Path == "/" ? "Root" : "Virtual App",
-                         RawBindings = site.Bindings
+                         RawBindings = app.Path == "/" ? site.Bindings : null
                      })); //NetFrameworkVersion
 
                     collection.ToList().ForEach(x => siteList.AddRange(x));

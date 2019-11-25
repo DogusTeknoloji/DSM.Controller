@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>1.0.7257.0</AssemblyVersion>
-    <FileVersion>1.0.7257.0</FileVersion>
+    <AssemblyVersion>1.0.7268.0</AssemblyVersion>
+    <FileVersion>1.0.7268.0</FileVersion>
     <PackageId>DSM.Controller</PackageId>
     <Version>1.0.7248.5</Version>
     <Authors>Dogus Technology DevOps Team</Authors>
@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSM.Core" Version="19.328.2" />
+    <PackageReference Include="DSM.Core" Version="19.329.2" />
     <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
     <PackageReference Include="Tx.All" Version="2.1.1" />
