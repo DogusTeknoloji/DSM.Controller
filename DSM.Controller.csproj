@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSM.Core" Version="1.0.7257" />
+    <PackageReference Include="DSM.Core" Version="19.328.2" />
     <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
     <PackageReference Include="Tx.All" Version="2.1.1" />
